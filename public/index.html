@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phone App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 500px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .phone-input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+    .call-button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      width: 100%;
+    }
+    .call-button:disabled {
+      background-color: #cccccc;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <h1>Phone App</h1>
+  <input type="tel" class="phone-input" placeholder="Enter phone number">
+  <button class="call-button">Call</button>
+
+  <script>
+    const callButton = document.querySelector('.call-button');
+    const phoneInput = document.querySelector('.phone-input');
+
+    callButton.addEventListener('click', async () => {
+      const phoneNumber = phoneInput.value;
+      if (!phoneNumber) return;
+
+      callButton.disabled = true;
+      callButton.textContent = 'Calling...';
+
+      try {
+        const response = await fetch('/call', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ to: phoneNumber })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          alert('Call initiated successfully!');
+        } else {
+          alert('Failed to make call: ' + data.error);
+        }
+      } catch (error) {
+        alert('Error: ' + error.message);
+      } finally {
+        callButton.disabled = false;
+        callButton.textContent = 'Call';
+      }
+    });
+  </script>
+</body>
+</html>
