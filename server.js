@@ -3,10 +3,18 @@ const express = require('express');
 const cors = require('cors');
 const twilio = require('twilio');
 
+console.log('🚀 Starting Phone App Server...');
+console.log('📅 Timestamp:', new Date().toISOString());
+console.log('🌐 Node.js version:', process.version);
+console.log('💻 Platform:', process.platform);
+
 const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+console.log('⚙️ Express middleware configured');
+console.log('📍 PORT from environment:', process.env.PORT);
 
 // 檢查環境變量是否存在
 console.log('Environment variables check:');
@@ -24,7 +32,12 @@ const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TO
 
 // Health check for Railway (must be before static files)
 app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'healthy' });
+  console.log('🏥 Health check requested');
+  res.status(200).json({ 
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
 });
 
 // API status endpoint
@@ -32,7 +45,22 @@ app.get('/api/status', (req, res) => {
   res.json({ 
     status: 'OK', 
     message: 'Phone App Server is running',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
+// Simple root endpoint as fallback
+app.get('/', (req, res) => {
+  res.json({
+    message: 'Phone App is running!',
+    status: 'OK',
+    timestamp: new Date().toISOString(),
+    endpoints: {
+      health: '/health',
+      status: '/api/status',
+      call: '/call (POST)'
+    }
   });
 });
 
@@ -74,7 +102,7 @@ app.use('*', (req, res) => {
   });
 });
 
-const server = app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, () => {
   console.log(`\n🚀 Server successfully started!`);
   console.log(`📡 Listening on port ${PORT}`);
   console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
