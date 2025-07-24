@@ -7,7 +7,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static('public'));
 
 // 檢查環境變量是否存在
 console.log('Environment variables check:');
@@ -23,8 +22,13 @@ if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN) {
 
 const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
-// Health check endpoint
-app.get('/', (req, res) => {
+// Health check for Railway (must be before static files)
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'healthy' });
+});
+
+// API status endpoint
+app.get('/api/status', (req, res) => {
   res.json({ 
     status: 'OK', 
     message: 'Phone App Server is running',
@@ -32,10 +36,8 @@ app.get('/', (req, res) => {
   });
 });
 
-// Health check for Railway
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'healthy' });
-});
+// Serve static files AFTER API routes
+app.use(express.static('public'));
 
 app.post('/call', async (req, res) => {
   try {
@@ -51,6 +53,49 @@ app.post('/call', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error('Error:', err.message);
+  console.error('Stack:', err.stack);
+  res.status(500).json({ 
+    success: false, 
+    error: 'Internal server error',
+    message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong'
+  });
+});
+
+// 404 handler
+app.use('*', (req, res) => {
+  res.status(404).json({ 
+    success: false, 
+    error: 'Not found',
+    path: req.originalUrl 
+  });
+});
+
+const server = app.listen(PORT, '0.0.0.0', () => {
+  console.log(`\n🚀 Server successfully started!`);
+  console.log(`📡 Listening on port ${PORT}`);
+  console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`⚡ Health check available at: /health`);
+  console.log(`📱 Phone app UI available at: /`);
+  console.log(`\n✅ Ready to receive requests!\n`);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('\n🛑 SIGTERM received, shutting down gracefully...');
+  server.close(() => {
+    console.log('✅ Server closed successfully');
+    process.exit(0);
+  });
+});
+
+process.on('SIGINT', () => {
+  console.log('\n🛑 SIGINT received, shutting down gracefully...');
+  server.close(() => {
+    console.log('✅ Server closed successfully');
+    process.exit(0);
+  });
 });

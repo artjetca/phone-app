@@ -85,15 +85,41 @@ fi
 echo ""
 
 # 總結
+# 測試健康檢查端點
+echo "🏥 測試健康檢查端點..."
+if command -v curl >/dev/null 2>&1; then
+    if pgrep -f "node server.js" > /dev/null; then
+        health_response=$(curl -s http://localhost:3000/health 2>/dev/null)
+        if echo "$health_response" | grep -q "healthy"; then
+            echo "✅ 健康檢查端點正常工作"
+        else
+            echo "⚠️  健康檢查端點可能有問題"
+        fi
+    else
+        echo "ℹ️  服務器未運行，無法測試健康檢查"
+    fi
+else
+    echo "ℹ️  curl 未安裝，跳過健康檢查測試"
+fi
+
+echo ""
+
+# 總結
 echo "📊 部署準備總結："
 if [ "$all_files_exist" = true ]; then
     echo "✅ 您的應用已準備好部署到 Railway！"
     echo ""
-    echo "下一步："
+    echo "🔧 修復內容："
+    echo "  - 修復了路由順序問題"
+    echo "  - 改進了錯誤處理和日誌記錄"
+    echo "  - 優化了 Railway 配置"
+    echo "  - 添加了優雅關閉處理"
+    echo ""
+    echo "📋 下一步："
     echo "1. 在 Railway 中創建新項目"
     echo "2. 連接您的 GitHub 倉庫 (artjetca/phone-app)"
-    echo "3. 設置環境變量（TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER）"
-    echo "4. 部署！"
+    echo "3. 設置環境變量（參考 .env.railway.example）"
+    echo "4. 部署並監控日誌！"
     echo ""
     echo "📖 詳細指南請參考 RAILWAY_DEPLOYMENT_GUIDE.md"
 else
